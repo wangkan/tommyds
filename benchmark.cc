@@ -754,10 +754,16 @@ tommy_bool_t the_log;
  */
 tommy_bool_t is_listed(unsigned data)
 {
-	(void)data;
+	switch (data)
+	{
+	case DATA_HASHTABLE:
+	case DATA_HASHDYN:
+	case DATA_CPPUNORDEREDMAP:
+	case DATA_CPPMAP:
+		return 1;
+	};
 
-	/* always have all the columns, we exclude them in the graphs */
-	return 1;
+	return 0;
 }
 
 /**
