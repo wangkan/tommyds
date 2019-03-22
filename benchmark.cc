@@ -448,6 +448,67 @@ NEDTRIE_GENERATE(static, nedtrie_t, nedtrie_object, link, nedtrie_func, NEDTRIE_
 
 KHASH_MAP_INIT_INT(word, struct khash_object*)
 
+
+
+
+
+char buf[10 * 1024 * 1024];
+char* p;
+
+template<class T>
+class MyAllocator
+{
+public:
+	typedef size_t		size_type;
+	typedef T*			pointer;
+	typedef const T*	const_pointer;
+	typedef T			value_type;
+
+	MyAllocator()
+	{
+		p = (char*)buf;
+	}
+
+	~MyAllocator()
+	{
+	}
+
+	MyAllocator(const MyAllocator& allocator)
+	{
+	}
+
+	template<class U>
+	MyAllocator(const MyAllocator<U>& allocator)
+	{
+	}
+
+	pointer allocate(size_t n)
+	{
+		T* a = (T*)p;
+		p += sizeof(T) * n;
+		return a;
+	}
+
+	void deallocate(pointer p, size_t n)
+	{
+	}
+
+	template<class U>
+	struct rebind
+	{
+		typedef MyAllocator<U> other;
+	};
+};
+
+typedef MyAllocator<std::pair<void*, cpp_object*>> MyMapAllocator;
+
+
+
+
+
+
+
+
 rbtree_t tree;
 tommy_hashtable hashtable;
 tommy_hashdyn hashdyn;
@@ -470,7 +531,7 @@ typedef std::map<unsigned, struct cpp_object*> cppmap_t;
 cppmap_t* cppmap;
 #endif
 #ifdef USE_CPPUNORDEREDMAP
-typedef std::unordered_map<unsigned, struct cpp_object*, cpp_hash> cppunorderedmap_t;
+typedef std::unordered_map<unsigned, struct cpp_object*, cpp_hash, std::equal_to<unsigned>, MyMapAllocator> cppunorderedmap_t;
 cppunorderedmap_t* cppunorderedmap;
 #endif
 #ifdef USE_GOOGLELIBCHASH
@@ -756,10 +817,10 @@ tommy_bool_t is_listed(unsigned data)
 {
 	switch (data)
 	{
-	case DATA_HASHTABLE:
+	//case DATA_HASHTABLE:
 	case DATA_HASHDYN:
 	case DATA_CPPUNORDEREDMAP:
-	case DATA_CPPMAP:
+	//case DATA_CPPMAP:
 		return 1;
 	};
 
@@ -979,6 +1040,7 @@ void test_alloc(void)
 	COND(DATA_CPPUNORDEREDMAP) {
 		CPP = (struct cpp_object*)malloc(sizeof(struct cpp_object) * the_max);
 		cppunorderedmap = new cppunorderedmap_t;
+		cppunorderedmap->reserve(100000);
 	}
 #endif
 
@@ -2701,6 +2763,10 @@ void test(unsigned size, unsigned data, int log, int sparse)
 					continue;
 
 				for(the_order=0;the_order<ORDER_MAX;++the_order) {
+
+					if (the_order == ORDER_FORWARD)
+						continue;
+
 					unsigned i;
 
 					printf("%12u", the_max);
