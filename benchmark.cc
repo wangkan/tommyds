@@ -313,6 +313,7 @@ struct ck_object {
 struct rbt_object* RBTREE;
 struct hashtable_object* HASHTABLE;
 struct hashtable_object* HASHDYN;
+tommy_node* HASHDYNNODES;
 struct hashtable_object* HASHLIN;
 struct trie_object* TRIE;
 struct trie_inplace_object* TRIE_INPLACE;
@@ -1027,6 +1028,7 @@ void test_alloc(void)
 	COND(DATA_HASHDYN) {
 		tommy_hashdyn_init(&hashdyn);
 		HASHDYN = (struct hashtable_object*)malloc(sizeof(struct hashtable_object) * the_max);
+		HASHDYNNODES = (tommy_node*)malloc(sizeof(tommy_node) * the_max);
 	}
 
 	COND(DATA_HASHLIN) {
@@ -1191,6 +1193,7 @@ void test_free(void)
 			abort();
 		tommy_hashdyn_done(&hashdyn);
 		free(HASHDYN);
+		free(HASHDYNNODES);
 	}
 
 	COND(DATA_HASHLIN) {
@@ -1324,7 +1327,7 @@ void test_insert(unsigned* INSERT)
 		unsigned key = INSERT[i];
 		unsigned hash_key = hash(key);
 		HASHDYN[i].value = key;
-		tommy_hashdyn_insert(&hashdyn, new tommy_hashdyn_node, &HASHDYN[i], hash_key);
+		tommy_hashdyn_insert(&hashdyn, &HASHDYNNODES[i], &HASHDYN[i], hash_key);
 	} STOP();
 
 	START(DATA_HASHLIN) {
@@ -2010,14 +2013,13 @@ void test_change(unsigned* REMOVE, unsigned* INSERT)
 		struct hashtable_object* obj;
 		tommy_hashdyn_node* node = tommy_hashdyn_remove(&hashdyn, tommy_hashtable_compare, &key, hash_key);
 		obj = (hashtable_object*)node->data;
-		delete node;
 		if (!obj)
 			abort();
 
 		key = INSERT[i] + DELTA;
 		hash_key = hash(key);
 		obj->value = key;
-		tommy_hashdyn_insert(&hashdyn, new tommy_hashdyn_node, obj, hash_key);
+		tommy_hashdyn_insert(&hashdyn, node, obj, hash_key);
 	} STOP();
 
 	START(DATA_HASHLIN) {
@@ -2346,7 +2348,6 @@ void test_remove(unsigned* REMOVE)
 		struct hashtable_object* obj;
 		tommy_hashdyn_node* node = tommy_hashdyn_remove(&hashdyn, tommy_hashtable_compare, &key, hash_key);
 		obj = (hashtable_object*)node->data;
-		delete node;
 		if (!obj)
 			abort();
 		if (dereference) {
