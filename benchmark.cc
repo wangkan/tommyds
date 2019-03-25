@@ -578,11 +578,11 @@ public:
 };
 #endif
 #ifdef USE_CPPMAP
-typedef std::map<unsigned, struct cpp_object*, std::less<unsigned>, MyMapAllocator0> cppmap_t;
+typedef std::map<unsigned, struct cpp_object*, std::less<unsigned>> cppmap_t;
 cppmap_t* cppmap;
 #endif
 #ifdef USE_CPPUNORDEREDMAP
-typedef std::unordered_map<unsigned, struct cpp_object*, cpp_hash, std::equal_to<unsigned>, MyMapAllocator1> cppunorderedmap_t;
+typedef std::unordered_map<unsigned, struct cpp_object*, cpp_hash, std::equal_to<unsigned>> cppunorderedmap_t;
 cppunorderedmap_t* cppunorderedmap;
 #endif
 #ifdef USE_GOOGLELIBCHASH
@@ -1091,7 +1091,7 @@ void test_alloc(void)
 	COND(DATA_CPPUNORDEREDMAP) {
 		CPP = (struct cpp_object*)malloc(sizeof(struct cpp_object) * the_max);
 		cppunorderedmap = new cppunorderedmap_t;
-		cppunorderedmap->reserve(100000);
+		//cppunorderedmap->reserve(100000);
 		//cppunorderedmap->rehash(100000);
 	}
 #endif
@@ -1324,7 +1324,7 @@ void test_insert(unsigned* INSERT)
 		unsigned key = INSERT[i];
 		unsigned hash_key = hash(key);
 		HASHDYN[i].value = key;
-		tommy_hashdyn_insert(&hashdyn, &HASHDYN[i].node, &HASHDYN[i], hash_key);
+		tommy_hashdyn_insert(&hashdyn, new tommy_hashdyn_node, &HASHDYN[i], hash_key);
 	} STOP();
 
 	START(DATA_HASHLIN) {
@@ -2008,14 +2008,16 @@ void test_change(unsigned* REMOVE, unsigned* INSERT)
 		unsigned key = REMOVE[i];
 		unsigned hash_key = hash(key);
 		struct hashtable_object* obj;
-		obj = (struct hashtable_object*)tommy_hashdyn_remove(&hashdyn, tommy_hashtable_compare, &key, hash_key);
+		tommy_hashdyn_node* node = tommy_hashdyn_remove(&hashdyn, tommy_hashtable_compare, &key, hash_key);
+		obj = (hashtable_object*)node->data;
+		delete node;
 		if (!obj)
 			abort();
 
 		key = INSERT[i] + DELTA;
 		hash_key = hash(key);
 		obj->value = key;
-		tommy_hashdyn_insert(&hashdyn, &obj->node, obj, hash_key);
+		tommy_hashdyn_insert(&hashdyn, new tommy_hashdyn_node, obj, hash_key);
 	} STOP();
 
 	START(DATA_HASHLIN) {
@@ -2342,7 +2344,9 @@ void test_remove(unsigned* REMOVE)
 		unsigned key = REMOVE[i] + DELTA;
 		unsigned hash_key = hash(key);
 		struct hashtable_object* obj;
-		obj = (struct hashtable_object*)tommy_hashdyn_remove(&hashdyn, tommy_hashtable_compare, &key, hash_key);
+		tommy_hashdyn_node* node = tommy_hashdyn_remove(&hashdyn, tommy_hashtable_compare, &key, hash_key);
+		obj = (hashtable_object*)node->data;
+		delete node;
 		if (!obj)
 			abort();
 		if (dereference) {
