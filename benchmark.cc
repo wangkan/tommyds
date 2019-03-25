@@ -452,11 +452,14 @@ KHASH_MAP_INIT_INT(word, struct khash_object*)
 
 
 
-char buf[10 * 1024 * 1024];
-char* p;
+char buf0[10 * 1024 * 1024];
+char* p0;
+
+char buf1[10 * 1024 * 1024];
+char* p1;
 
 template<class T>
-class MyAllocator
+class MyAllocator0
 {
 public:
 	typedef size_t		size_type;
@@ -464,28 +467,28 @@ public:
 	typedef const T*	const_pointer;
 	typedef T			value_type;
 
-	MyAllocator()
+	MyAllocator0()
 	{
-		p = (char*)buf;
+		p0 = (char*)buf0;
 	}
 
-	~MyAllocator()
+	~MyAllocator0()
 	{
 	}
 
-	MyAllocator(const MyAllocator& allocator)
+	MyAllocator0(const MyAllocator0& allocator)
 	{
 	}
 
 	template<class U>
-	MyAllocator(const MyAllocator<U>& allocator)
+	MyAllocator0(const MyAllocator0<U>& allocator)
 	{
 	}
 
 	pointer allocate(size_t n)
 	{
-		T* a = (T*)p;
-		p += sizeof(T) * n;
+		T* a = (T*)p0;
+		p0 += sizeof(T) * n;
 		return a;
 	}
 
@@ -496,11 +499,59 @@ public:
 	template<class U>
 	struct rebind
 	{
-		typedef MyAllocator<U> other;
+		typedef MyAllocator0<U> other;
 	};
 };
 
-typedef MyAllocator<std::pair<void*, cpp_object*>> MyMapAllocator;
+typedef MyAllocator0<std::pair<void*, cpp_object*>> MyMapAllocator0;
+
+
+template<class T>
+class MyAllocator1
+{
+public:
+	typedef size_t		size_type;
+	typedef T*			pointer;
+	typedef const T*	const_pointer;
+	typedef T			value_type;
+
+	MyAllocator1()
+	{
+		p1 = (char*)buf1;
+	}
+
+	~MyAllocator1()
+	{
+	}
+
+	MyAllocator1(const MyAllocator1& allocator)
+	{
+	}
+
+	template<class U>
+	MyAllocator1(const MyAllocator1<U>& allocator)
+	{
+	}
+
+	pointer allocate(size_t n)
+	{
+		T* a = (T*)p1;
+		p1 += sizeof(T) * n;
+		return a;
+	}
+
+	void deallocate(pointer p, size_t n)
+	{
+	}
+
+	template<class U>
+	struct rebind
+	{
+		typedef MyAllocator1<U> other;
+	};
+};
+
+typedef MyAllocator1<std::pair<void*, cpp_object*>> MyMapAllocator1;
 
 
 
@@ -527,11 +578,11 @@ public:
 };
 #endif
 #ifdef USE_CPPMAP
-typedef std::map<unsigned, struct cpp_object*> cppmap_t;
+typedef std::map<unsigned, struct cpp_object*, std::less<unsigned>, MyMapAllocator0> cppmap_t;
 cppmap_t* cppmap;
 #endif
 #ifdef USE_CPPUNORDEREDMAP
-typedef std::unordered_map<unsigned, struct cpp_object*, cpp_hash, std::equal_to<unsigned>, MyMapAllocator> cppunorderedmap_t;
+typedef std::unordered_map<unsigned, struct cpp_object*, cpp_hash, std::equal_to<unsigned>, MyMapAllocator1> cppunorderedmap_t;
 cppunorderedmap_t* cppunorderedmap;
 #endif
 #ifdef USE_GOOGLELIBCHASH
@@ -820,7 +871,7 @@ tommy_bool_t is_listed(unsigned data)
 	//case DATA_HASHTABLE:
 	case DATA_HASHDYN:
 	case DATA_CPPUNORDEREDMAP:
-	//case DATA_CPPMAP:
+	case DATA_CPPMAP:
 		return 1;
 	};
 
