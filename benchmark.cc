@@ -1041,6 +1041,7 @@ void test_alloc(void)
 		CPP = (struct cpp_object*)malloc(sizeof(struct cpp_object) * the_max);
 		cppunorderedmap = new cppunorderedmap_t;
 		cppunorderedmap->reserve(100000);
+		//cppunorderedmap->rehash(100000);
 	}
 #endif
 
